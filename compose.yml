@@ -3,7 +3,11 @@ services:
     image: dockurr/windows
     container_name: windows
     environment:
-      VERSION: "11"
+      VERSION: "https://archive.org/download/debombed-windows-7-build-7000/Debombed%20Windows%207%20Build%207000.iso"
+      RAM_SIZE: "8G"
+      CPU_CORES: "1"
+      DISK_TYPE: "ide"      
+      MANUAL: "Y"
     devices:
       - /dev/kvm
       - /dev/net/tun
@@ -15,5 +19,6 @@ services:
       - 3389:3389/udp
     volumes:
       - ./windows:/storage
+      - ./winc:/data  
     restart: always
     stop_grace_period: 2m
