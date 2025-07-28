@@ -1,0 +1,6 @@
+image:
+  file: .Dockerfile
+
+tasks:
+  - name: Start Docker Compose
+    init: docker-compose up --build
