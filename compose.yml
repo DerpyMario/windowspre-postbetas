@@ -3,7 +3,7 @@ services:
     image: dockurr/windows
     container_name: windows
     environment:
-      VERSION: "https://archive.org/download/windows_8_professional_rtm/en_windows_8_x64_dvd_915440.iso"
+      VERSION: "https://archive.org/download/Win8Build8330Debombed/%E6%8B%86%E5%BC%B9%E9%95%9C%E5%83%8FWindows%208%20build%208330%20fbl_grfx_dev1%28x64%29%20debombed.iso"
       RAM_SIZE: "8G"
       CPU_CORES: "2"
     devices:
