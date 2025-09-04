@@ -5,7 +5,7 @@ services:
     environment:
       VERSION: "10e"
       RAM_SIZE: "8G"
-      CPU_CORES: "4"
+      CPU_CORES: "2"
     devices:
       - /dev/kvm
       - /dev/net/tun
