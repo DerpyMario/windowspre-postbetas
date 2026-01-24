@@ -3,7 +3,7 @@ services:
     image: dockurr/windows
     container_name: windows
     environment:
-      VERSION: "10e"
+      VERSION: "https://software.download.prss.microsoft.com/dbazure/Windows11_InsiderPreview_EnterpriseVL_x64_en-us_27924.iso?t=49af471a-9a8b-4782-baa1-88573c458150&P1=1769353715&P2=601&P3=2&P4=vfnRczk4EbI7XAZg1EgXRM%2btO6s74iKdS3DEc4OXNct7YKE%2bfM%2bycDYYEE%2bgKD2CBkgioqiL%2ftVmcaSWX2%2fSUDtIRr%2bEhRYqZ3S6rjgVeh6mHWyRjuxNiuDN%2fsx9w4EWZs9Iwkl4CwQp4qiuxfbpg3l5KheoMDYL0DOt7onnPHc%2bV%2bgtYAz7MJzfNx%2f4hhI6o5RMOZsVindrKmRZflUQbcQVf1dIbm4yYOhVAQQsKwWR5YPYWlD8L7v6XvKwaZjCXTbVSDVra%2fV09dIbY7MGBSPQ2beBXBJCn%2bW7FnGtQIzTbYPdq8Ezey3wnk5woEAUCMcCajbxmXAkS4Jq3zTUVA%3d%3d"
       RAM_SIZE: "8G"
       CPU_CORES: "2"
     devices:
