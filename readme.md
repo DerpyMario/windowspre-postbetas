@@ -75,6 +75,10 @@ For a complete graphical desktop experience, see [WinBoat](https://winboat.app),
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/DerpyMario/windowspre-postbetas)
 
+##### Setup guide
+
+For step-by-step instructions on setting this up in Docker and on GitHub, including beta images, local builds, and the CI workflows, see the [setup guide](docs/README.md).
+
 ## Requirements ⚙️
 
 - Docker or Podman on a Linux host with KVM support.
@@ -400,7 +404,7 @@ For a complete graphical desktop experience, see [WinBoat](https://winboat.app),
 
 ### Are these all available options?
 
-  No. For a complete overview of all supported settings, see the [environment variables](docs/environment.md) page.
+  No. For a complete overview of all supported settings, see the [environment variables](docs/environment.md) page, and the [setup guide](docs/README.md) for how to put them together in Docker and on GitHub.
 
 ### How do I verify that KVM is available?
 
