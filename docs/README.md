@@ -318,8 +318,18 @@ See [environment.md](environment.md) for the complete list, grouped by category.
 # Part 2 — GitHub 🐙
 
 The `.github` folder ships a complete CI/CD setup: build and publish, linting, PR review, live installation tests,
-Docker Hub description sync, and daily download-mirror checks. On a fresh fork none of it works until you configure
-the variables and secrets below.
+Docker Hub description sync, and download-mirror checks. On a fresh fork none of it works until you configure the
+variables and secrets below.
+
+> [!IMPORTANT]
+> **Every workflow is manual.** They all run on `workflow_dispatch` only — nothing fires on a push, a pull request, a
+> release, or a schedule. Start each one from **Actions → _(workflow)_ → Run workflow**. The two reusable workflows,
+> `settings.yml` and `install.yml`, are the exception: they run only when another workflow calls them, so they never
+> trigger on their own either.
+
+This means pull requests get no automatic linting or review, the Docker Hub description no longer syncs by itself,
+and the download mirrors are not checked on a schedule. Run **Test**, **Update**, and **Links** by hand when you
+want those.
 
 ## Step 1: Fork or clone
 
@@ -378,15 +388,24 @@ The Build job requests `packages: write`, `actions: write`, and `contents: read`
 
 | Workflow | File | Trigger | What it does |
 |---|---|---|---|
-| Build | `build.yml` | Manual (`workflow_dispatch`) | Runs the checks, builds `linux/amd64` + `linux/arm64`, pushes to Docker Hub and GHCR, creates a release, bumps `MINOR`, mirrors to GitLab, sends mail. |
-| Check | `check.yml` | Called by other workflows | ShellCheck over `src`, hadolint on the `Dockerfile`, XML validation of `assets`, and JSON/YAML validation. |
-| Test | `test.yml` | Pull requests, manual | Thin wrapper that runs **Check** on PRs. |
-| Review | `review.yml` | Pull requests | Shared review workflow from `action-pack/.github`. Needs `pull-requests: write` and `checks: write`. |
-| Update | `hub.yml` | Push to `master` touching `readme.md`, `README.md`, or itself | Pushes the readme to Docker Hub as the repository description. |
-| Links | `links.yml` | Daily at 00:00 UTC, manual | Validates every download mirror with aria2 and mails on failure. |
-| Validation | `validate.yml` | Release published, manual | Matrix of real installation tests across desktop, server, legacy, win9x, and tiny editions. |
-| Settings | `settings.yml` | Called by `validate.yml` | Applies shared test parameters (timeouts, reboot limits) and calls **Installation**. |
-| Installation | `install.yml` | Called by `settings.yml` | Builds the image and installs Windows on a runner, then asserts caption, edition, build number, and platform. |
+| Build | `build.yml` | Manual | Runs the checks, builds `linux/amd64` + `linux/arm64`, pushes to Docker Hub and GHCR, creates a release, bumps `MINOR`, mirrors to GitLab, sends mail. |
+| Check | `check.yml` | Manual, or called by **Build** and **Test** | ShellCheck over `src`, hadolint on the `Dockerfile`, XML validation of `assets`, and JSON/YAML validation. |
+| Test | `test.yml` | Manual | Thin wrapper that runs **Check**. |
+| Review | `review.yml` | Manual | Shared review workflow from `action-pack/.github`. Needs `pull-requests: write` and `checks: write`. |
+| Update | `hub.yml` | Manual | Pushes `readme.md` to Docker Hub as the repository description. |
+| Links | `links.yml` | Manual | Validates every download mirror with aria2 and mails on failure. |
+| Validation | `validate.yml` | Manual | Matrix of real installation tests across desktop, server, legacy, win9x, and tiny editions. |
+| Settings | `settings.yml` | Called by **Validation** | Applies shared test parameters (timeouts, reboot limits) and calls **Installation**. |
+| Installation | `install.yml` | Called by **Settings** | Builds the image and installs Windows on a runner, then asserts caption, edition, build number, and platform. |
+
+`settings.yml` and `install.yml` keep only `workflow_call` because `workflow_dispatch` allows at most 10 inputs and
+does not support the `number` type — `install.yml` declares 22 inputs, several of them numeric. Run **Validation**
+to reach them, or call **Installation** from a workflow of your own as shown [below](#installation-and-validation-tests).
+
+> [!NOTE]
+> **Review** was written for pull requests and reads the PR from the event payload. Dispatched manually there is no
+> pull request in context, so expect it to find nothing to review. It is kept on `workflow_dispatch` for
+> consistency; put it back on `pull_request` if you want it to do its job, or delete it.
 
 ## Publishing an image with the Build workflow
 
@@ -457,16 +476,26 @@ jobs:
 
 ## Docker Hub description sync
 
-`hub.yml` pushes `./readme.md` to Docker Hub as the repository description whenever it changes on `master`, using
-the repository's GitHub description as the short description. It needs the same three Docker Hub secrets. Note that
-it reads `readme.md` specifically — this guide lives under `docs/`, so editing it does not trigger a sync.
+`hub.yml` pushes `./readme.md` to Docker Hub as the repository description, using the repository's GitHub
+description as the short description. It needs the same three Docker Hub secrets. Since it is manual, remember to
+run it after editing the readme. It reads `readme.md` specifically, so changes to this guide under `docs/` are never
+reflected on Docker Hub.
 
 ## Download mirror checks
 
-`links.yml` runs daily and validates every download mirror referenced by the source scripts using aria2, then mails
-`MAILTO` when a mirror breaks. This is the early-warning system for "the download suddenly 404s" reports. It only
-needs `MAILTO` and `MAIL_CONNECTION`; without them the mail step fails while the validation results still show in
-the job log.
+`links.yml` validates every download mirror referenced by the source scripts using aria2, then mails `MAILTO` when a
+mirror breaks. This is the early-warning system for "the download suddenly 404s" reports. It only needs `MAILTO` and
+`MAIL_CONNECTION`; without them the mail step fails while the validation results still show in the job log.
+
+It used to run on a daily schedule. Now that it is manual, run it before a release, or re-add a `schedule:` trigger
+if you want the mirrors watched unattended:
+
+```yaml
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+```
 
 ## Codespaces and devcontainers
 
@@ -542,12 +571,12 @@ Note that hadolint runs with `failure-threshold: warning` in CI, so warnings fai
 
 ## Branches
 
-`master` is the default branch, and `beta-pre-releases` tracks beta and pre-release work. Two workflows care about
-branch names:
+`master` is the default branch, and `beta-pre-releases` tracks beta and pre-release work.
 
-- `hub.yml` only fires on pushes to `master`.
-- `install.yml` builds from the `branch` input (default `dev`) and silently falls back to `master` when that branch
-  does not exist — so pass `branch: beta-pre-releases` explicitly when you want to test that branch.
+Because every workflow is manual, the branch you pick in the **Run workflow** dropdown is the branch whose workflow
+file and code are used. One extra wrinkle applies to the installation tests: `install.yml` builds from its own
+`branch` input (default `dev`) rather than the dispatched ref, and silently falls back to `master` when that branch
+does not exist — so pass `branch: beta-pre-releases` explicitly when you want to test that branch.
 
 ---
 
